@@ -30,6 +30,8 @@ def generate_partitions(num_points, num_partitions):
 def solve_naive_kmeans(data, k, tol, max_steps):
     """
     Naively solves the k-means problem for k clusters given n by d data
+    Reference:
+    https://nlp.stanford.edu/IR-book/html/htmledition/k-means-1.html
     Args:
         -data:      n by d (points by features) matrix of data
         -k:         number of desired clusters
@@ -42,4 +44,23 @@ def solve_naive_kmeans(data, k, tol, max_steps):
     :param max_steps:
     :return:
     """
+    # set up variables
+    cluster_means, f_val = [], 100
+    while abs(f_val) > tol:
+        f_val = 0
+        # Generate k random disjoint partitions
+        partitions, counts = generate_partitions(data.shape[0], k)
+        for subsets in partitions:
+            # calculate the centroid of current subset
+            cluster_means.append(np.sum(data[subsets::], axis=0) / np.linalg.norm(np.array(subsets),2))
+        # calculate objective function value
+        for k in range(0, len(cluster_means)):
+            for vecs in subsets[k]:
+                f_val += np.linalg.norm((vecs - cluster_means[k]),2)**2
+        # DEBUG
+        print(f_val)
+
+
+
+
 
