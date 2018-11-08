@@ -60,7 +60,7 @@ def solve_kmeans_naive(data, k, tol, max_steps):
         # DEBUG
         print(f_val)
 
-def solve_kmeans_lloyd(data, k, tol, freq, max_steps):
+def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd'):
     """
     Solve for k clusters using Lloyd's algorithm
 
@@ -84,7 +84,10 @@ def solve_kmeans_lloyd(data, k, tol, freq, max_steps):
     for j in range(0,k):
         clusters[str(j)] = []
     # initialize with k random centers drawn from n, no need to worry about replacement here n >> k
-    centers[:] = data[np.random.randint(0, data.shape[0], k)]
+    if method is 'lloyd':
+        centers[:] = data[np.random.randint(0, data.shape[0], k)]
+    #elif method is 'pp':
+        #centers[:] = #function call
     # assign each data point to the nearest center
     while delta > tol and iterations < max_steps:
         for idx in range(0, data.shape[0]):
@@ -116,9 +119,14 @@ def solve_kmeans_lloyd(data, k, tol, freq, max_steps):
         iterations += 1
     return f_vals
 
-def solve_kmeans_pp(data, k, tol, freq, max_steps):
+def solve_kmeans_pp(data, k):
     """
     Implements the k-means++ algorithm for comparison with Lloyd
+    Will change to just return initial guesses for input into other function
+    Only difference is the initial guess at cluster centers
+
+    Reference:
+    https://stackoverflow.com/questions/5466323/how-exactly-does-k-means-work
 
     Args:
         -data:      n by d np array
@@ -130,6 +138,28 @@ def solve_kmeans_pp(data, k, tol, freq, max_steps):
     Returns:
         -f_vals:    objective value at each iteration
     """
+    centers = np.zeros((k, data.shape[1]))
+    # get the first random center
+    centers[1] = data[np.random.randint(0, data.shape[0])]
+    # use partitioned uniform distribution to find probabilities
+    # technically we should choose all j != the chosen centers but, n >> k
+    s = 1 # counter for rows in centers
+    while len(centers) <= k:
+        probabilities, factor = [], 0
+        for i in range(0, data.shape[0]):
+            distances = []
+            for j in range(0,s):
+                # find min distance to each current center
+                distances.append(np.linalg.norm(data[i] - centers[j], 2)**2)
+            probabilities.append(min(distances))
+            factor += min(distances)
+        true_probabilities = [x / factor for x in probabilities]
+        print(sum(true_probabilities)) # check if probabilities sum to one
+        intervals = np.cumsum(true_probabilities)
+
+
+
+
 
 
 
