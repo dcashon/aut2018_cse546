@@ -13,7 +13,6 @@ def generate_partitions(num_points, num_partitions):
     Returns:
         -partitions: a list of num_partitions lists that contain disjoint subsets of input_array
         -counts: a list of number of elements of each partition, > 0
-    Warning: input_array is shuffled in place. Call sort to reorder.
     """
     to_shuffle = list(range(0, num_points))
     np.random.shuffle(to_shuffle)
@@ -61,29 +60,33 @@ def solve_kmeans_naive(data, k, tol, max_steps):
         # DEBUG
         print(f_val)
 
-def solve_kmeans_lloyd(data, k, tol):
+def solve_kmeans_lloyd(data, k, tol, freq, max_steps):
     """
     Solve for k clusters using Lloyd's algorithm
+
     Reference:
     https://medium.com/@kshithappens/local-maxima-2abb717d6c06
+
     Args:
-        -data: n by d np.array
-        -k:    number of clusters desired
-    :param data:
-    :param k:
-    :param tol:
-    :return:
+        -data:      n by d np array
+        -k:         number of desired clusters
+        -tol:       stopping condition based on small change in center matrix
+        -freq:      how often to calculate the objective value
+        -max_steps: force a max number of iterations before stopping
+
+    Returns:
+        -f_vals:    objective value at each iteration
     """
     # variables
     centers = np.zeros((k, data.shape[1]))
     centers_prior = np.zeros((k, data.shape[1])) # may not need to allocate this
-    clusters, delta = {}, 10000
+    clusters, delta, iterations, f_vals = {}, 10000, 0, []
     for j in range(0,k):
         clusters[str(j)] = []
     # initialize with k random centers drawn from n, no need to worry about replacement here n >> k
     centers[:] = data[np.random.randint(0, data.shape[0], k)]
     # assign each data point to the nearest center
-    while delta > tol:
+    while delta > tol and iterations < max_steps:
         for idx in range(0, data.shape[0]):
             d_min = 10000
             for i in range(0,k):
@@ -93,16 +96,41 @@ def solve_kmeans_lloyd(data, k, tol):
                     d_min = d
                     min_center = i
             clusters[str(min_center)].append(idx)
-        # reset centers and recalculate
-        centers_prior[:] = centers[:]
-        centers[:] = 0
+        centers_prior[:] = centers[:] # reset centers and recalculate
+        f_val = 0
         for key in clusters.keys():
-            centers[int(key)] = np.sum(data[clusters[key]], axis=0) / np.linalg.norm(np.array(clusters[key]))
+            # calc objective function
+            if iterations % freq == 0: # no need to calc function value every iteration too expensive
+                for vec in clusters[key]:
+                    f_val += np.linalg.norm(data[vec] - centers[int(i)], 2)**2
+            # if points have been assigned to cluster, do something, else dont
+            if clusters[key]:
+                centers[int(key)] = 0
+                centers[int(key)] = np.sum(data[clusters[key]], axis=0) / len(clusters[key])
             clusters[key] = []
-        centers = np.nan_to_num(centers)
         delta = np.max(np.abs(centers - centers_prior))
         print(delta)
-        # calculate the objective function
+        print(f_val)
+        print(iterations)
+        f_vals.append(f_val)
+        iterations += 1
+    return f_vals
+
+def solve_kmeans_pp(data, k, tol, freq, max_steps):
+    """
+    Implements the k-means++ algorithm for comparison with Lloyd
+
+    Args:
+        -data:      n by d np array
+        -k:         number of desired clusters
+        -tol:       stopping condition based on small change in center matrix
+        -freq:      how often to calculate the objective value
+        -max_steps: force a max number of iterations before stopping
+
+    Returns:
+        -f_vals:    objective value at each iteration
+    """
+
 
 
 
