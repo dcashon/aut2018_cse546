@@ -60,13 +60,13 @@ def solve_kmeans_naive(data, k, tol, max_steps):
         # DEBUG
         print(f_val)
 
-def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd'):
+def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd', pp_centers=0):
     """
     Solve for k clusters using Lloyd's algorithm
 
     Reference:
     https://medium.com/@kshithappens/local-maxima-2abb717d6c06
-
+    http://ilpubs.stanford.edu:8090/778/1/2006-13.pdf
     Args:
         -data:      n by d np array
         -k:         number of desired clusters
@@ -86,8 +86,8 @@ def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd'):
     # initialize with k random centers drawn from n, no need to worry about replacement here n >> k
     if method is 'lloyd':
         centers[:] = data[np.random.randint(0, data.shape[0], k)]
-    #elif method is 'pp':
-        #centers[:] = #function call
+    elif method is 'pp':
+        centers[:] = pp_centers
     # assign each data point to the nearest center
     while delta > tol and iterations < max_steps:
         for idx in range(0, data.shape[0]):
@@ -117,9 +117,9 @@ def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd'):
         print(iterations)
         f_vals.append(f_val)
         iterations += 1
-    return f_vals
+    return f_vals, centers
 
-def solve_kmeans_pp(data, k):
+def get_pp(data, k):
     """
     Implements the k-means++ algorithm for comparison with Lloyd
     Will change to just return initial guesses for input into other function
@@ -127,7 +127,7 @@ def solve_kmeans_pp(data, k):
 
     Reference:
     https://stackoverflow.com/questions/5466323/how-exactly-does-k-means-work
-
+    http://ilpubs.stanford.edu:8090/778/1/2006-13.pdf
     Args:
         -data:      n by d np array
         -k:         number of desired clusters
@@ -136,15 +136,14 @@ def solve_kmeans_pp(data, k):
         -max_steps: force a max number of iterations before stopping
 
     Returns:
-        -f_vals:    objective value at each iteration
+        -clusters:  a list of starting clusters chosen via kmeans++. Feed to normal k-means
     """
     centers = np.zeros((k, data.shape[1]))
-    # get the first random center
-    centers[1] = data[np.random.randint(0, data.shape[0])]
+    centers[0] = data[np.random.randint(0, data.shape[0])] # get the first random center
     # use partitioned uniform distribution to find probabilities
-    # technically we should choose all j != the chosen centers but, n >> k
+    # technically we should choose all j != the chosen centers but, n >> k so probably fine
     s = 1 # counter for rows in centers
-    while len(centers) <= k:
+    while s < k:
         probabilities, factor = [], 0
         for i in range(0, data.shape[0]):
             distances = []
@@ -153,11 +152,10 @@ def solve_kmeans_pp(data, k):
                 distances.append(np.linalg.norm(data[i] - centers[j], 2)**2)
             probabilities.append(min(distances))
             factor += min(distances)
-        true_probabilities = [x / factor for x in probabilities]
-        print(sum(true_probabilities)) # check if probabilities sum to one
-        intervals = np.cumsum(true_probabilities)
-
-
+        intervals = np.cumsum([x / factor for x in probabilities])
+        centers[s] = data[np.searchsorted(intervals, np.random.uniform())] # chose next center
+        s += 1
+    return centers
 
 
 
