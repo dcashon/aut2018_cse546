@@ -1,5 +1,6 @@
 import numpy as np
 from mnist import MNIST
+import matplotlib.pyplot as plt
 
 
 # D. Cashon
@@ -292,3 +293,9 @@ def predict_error(data, w, true_responses):
     error = np.sum((predictions - true_responses) ** 2)
     return error
 
+def make_plot(data, num_plots, fig_size=(12,10), gridx=2, gridy=2):
+    plt.clf()
+    fig = plt.figure(1, (12,10))
+    for i in range(1, num_plots+1):
+        fig.add_subplot(gridx, gridy,i).imshow(np.reshape(data[i-1], (28,28)))
+    return fig
