@@ -4,62 +4,6 @@ import numpy as np
 # Algorithms and supporting functions for k-means clustering
 
 
-def generate_partitions(num_points, num_partitions):
-    """
-    Generates k random disjoint subsets of range(0,num_points)
-    Args:
-        -num_points: n, the number of data points
-        -num_partitions: the number of desired partitions of range(0,n)
-    Returns:
-        -partitions: a list of num_partitions lists that contain disjoint subsets of input_array
-        -counts: a list of number of elements of each partition, > 0
-    """
-    to_shuffle = list(range(0, num_points))
-    np.random.shuffle(to_shuffle)
-    counts, partitions = [], []
-    while sum(counts) != num_points:
-        counts = [np.random.randint(1, num_points) for i in range(0, num_partitions)]
-    for i in range(0, len(counts)):
-        if i == 0:
-            partitions.append(to_shuffle[0:counts[i]])
-        else:
-            partitions.append(to_shuffle[sum(counts[:i]): sum(counts[:i]) + counts[i]])
-    return partitions, counts
-
-def solve_kmeans_naive(data, k, tol, max_steps):
-    """
-    Naively solves the k-means problem for k clusters given n by d data
-    Terrible idea
-    Reference:
-    https://nlp.stanford.edu/IR-book/html/htmledition/k-means-1.html
-    Args:
-        -data:      n by d (points by features) matrix of data
-        -k:         number of desired clusters
-        -tol:       stopping criterion
-        -max_steps: max iterations before break
-    Returns:
-
-    :param data:
-    :param tol:
-    :param max_steps:
-    :return:
-    """
-    # set up variables
-    cluster_means, f_val = [], 100
-    while abs(f_val) > tol:
-        cluster_means, f_val = [], 0
-        # Generate k random disjoint partitions
-        partitions, counts = generate_partitions(data.shape[0], k)
-        for subsets in partitions:
-            # calculate the centroid of current subset
-            cluster_means.append(np.sum(data[subsets], axis=0) / np.linalg.norm(np.array(subsets),2))
-        # calculate objective function value
-        for idx in range(0, len(cluster_means)):
-            for vecs in subsets:
-                f_val += np.linalg.norm((data[vecs] - cluster_means[idx]),2)**2
-        # DEBUG
-        print(f_val)
-
 def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd', pp_centers=0):
     """
     Solve for k clusters using Lloyd's algorithm
@@ -67,6 +11,7 @@ def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd', pp_centers=0):
     Reference:
     https://medium.com/@kshithappens/local-maxima-2abb717d6c06
     http://ilpubs.stanford.edu:8090/778/1/2006-13.pdf
+
     Args:
         -data:      n by d np array
         -k:         number of desired clusters
@@ -121,13 +66,12 @@ def solve_kmeans(data, k, tol, freq, max_steps, method='lloyd', pp_centers=0):
 
 def get_pp(data, k):
     """
-    Implements the k-means++ algorithm for comparison with Lloyd
-    Will change to just return initial guesses for input into other function
-    Only difference is the initial guess at cluster centers
+    Implements the k-means++ algorithm to select better initial guesses for clustering
 
     Reference:
     https://stackoverflow.com/questions/5466323/how-exactly-does-k-means-work
     http://ilpubs.stanford.edu:8090/778/1/2006-13.pdf
+
     Args:
         -data:      n by d np array
         -k:         number of desired clusters
